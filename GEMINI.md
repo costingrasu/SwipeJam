@@ -87,3 +87,35 @@ Relationships: N:1 with jams, N:1 with users, N:1 with songs.
 - **Queue Dynamism:** The "Next Song" is always the one with `status = NOT_PLAYED` having the highest `score` (or `superliked = true`).
 - **Safety:** Only the `current_song_id` is safe from being reordered.
 - **Super-Like:** Limited to 1 use per user per jam session.
+
+## 6. Design System & UI Guidelines
+
+### Typography
+- **Headings & Brand (Logo/Titles):** `Poppins` (Google Fonts) - Modern, geometric, and friendly.
+- **Body & UI Text (Track names, UI elements):** `Inter` (Google Fonts) - Clean, highly readable, perfect for complex interfaces.
+
+### Color Palette (Tailwind CSS Reference)
+The UI colors are directly extracted from the SwipeJam logo to maintain strong brand consistency.
+
+#### Primary Colors
+- **Deep Jam Purple:** `#732C7B` (Primary brand color, main buttons, active states, progress bars)
+- **Jam Hover:** `#8A3A93` (Hover states for primary buttons)
+- **Jam Dark:** `#58205E` (Pressed states, deep accents)
+
+#### Secondary / Accent
+- **Golden Crust:** `#C97A34` (Gamification elements, Super-Like actions, badges, highlights)
+- **Crust Light:** `#E08B40` (Hover states for gamification elements)
+
+#### Neutrals & Backgrounds (Light Mode)
+- **Dough Cream (Main BG):** `#F9F6F0` (Main app background, warmer and easier on the eyes than pure white)
+- **Pure White (Surfaces):** `#FFFFFF` (Swipe cards, modals, popups, dropdowns)
+- **Silver Knife (Borders):** `#D1D5DB` (Dividers in the queue, subtle borders, inactive elements)
+
+#### Text Colors
+- **Dark Roast (Main Text):** `#2A1D2D` (Primary text, track names, usernames - avoids harsh pure black)
+- **Subtle Gray (Secondary Text):** `#6B636E` (Artist names, timestamps, placeholders)
+
+#### Dark Mode (Optional/Future)
+- **Dark Background:** `#150F16` (Deep purple-tinted black for the main background)
+- **Dark Surfaces:** `#251A27` (Swipe cards and modals in dark mode)
+- **Primary Accent (Dark Mode):** `#A14EAB` (Lighter purple for better visibility on dark backgrounds)
