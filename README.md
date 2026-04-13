@@ -1,1 +1,1 @@
-# SwipeJam
+# SwipeJam APP
