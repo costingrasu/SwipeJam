@@ -4,7 +4,7 @@ import spotifyLogo from '../assets/Spotify.png';
 export default function Login() {
   const handleSpotifyLogin = () => {
     // Hardcoded URL pointing to our future Spring Boot OAuth2 initialization endpoint
-    window.location.href = 'http://localhost:8080/oauth2/authorization/spotify';
+    window.location.href = 'http://127.0.0.1:8080/oauth2/authorization/spotify';
   };
 
   return (
