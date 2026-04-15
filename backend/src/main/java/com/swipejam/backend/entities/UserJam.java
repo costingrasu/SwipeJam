@@ -29,6 +29,9 @@ public class UserJam {
     @Column(name = "used_superlike", nullable = false)
     private Boolean usedSuperlike = false;
 
+    @Column(name = "active", nullable = false)
+    private Boolean active = true;
+
     @Column(name = "joined_at", nullable = false, updatable = false)
     private Instant joinedAt = Instant.now();
 }

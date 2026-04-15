@@ -54,6 +54,7 @@ users_jams: (Helper Table)
 jam_id: UUID (FK/PK)
 user_id: UUID (FK/PK)
 used_superlike: Boolean (Default: FALSE)
+active: Boolean
 joined_at: Timestamp
 
 songs:

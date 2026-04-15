@@ -7,17 +7,42 @@
   --color-jam-purple: #732C7B;
   --color-jam-hover: #8A3A93;
   --color-jam-dark: #58205E;
-  
+
   --color-dough: #F9F6F0;
   --color-crust: #C97A34;
   --color-crust-light: #E08B40;
-  
-  --color-text-main: #2A1D2D;
-  --color-text-subtle: #6B636E;
-  --color-border-subtle: #D1D5DB;
+
+  --color-dark-roast: #2A1D2D;
+  --color-subtle-gray: #6B636E;
 
   --color-spotify: #1DB954;
   --color-spotify-hover: #1ed760;
+
+  --animate-shake: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+
+  @keyframes shake {
+
+    10%,
+    90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+      transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+      transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+      transform: translate3d(4px, 0, 0);
+    }
+  }
 }
 
 @layer base {
@@ -27,8 +52,13 @@
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
   }
 }
