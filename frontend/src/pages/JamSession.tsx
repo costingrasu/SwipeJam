@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LyricsView from '../components/LyricsView';
 import lyricsIcon from '../assets/lyrics.png';
 import playerIcon from '../assets/player.png';
 import swipeIcon from '../assets/swipe.png';
@@ -270,12 +271,20 @@ export default function JamSession() {
           </div>
         </div>
       )}
-      <div className="flex-1 w-full overflow-y-auto pb-32 flex flex-col relative px-6">
+      <div className={`flex-1 w-full flex flex-col relative ${tab !== 'lyrics' ? 'overflow-y-auto pb-32 px-6' : 'overflow-hidden'}`}>
         {tab === 'lyrics' && (
-          <div className="flex flex-col items-center justify-center h-full animate-in fade-in zoom-in-95 duration-300">
-            <h2 className="text-2xl font-bold text-jam-purple">Lyrics State</h2>
-            <p className="text-subtle-gray mt-2">(Placeholder for lyrics stream)</p>
-          </div>
+          <LyricsView
+            trackName={jam.currentSong?.title ?? null}
+            artistName={jam.currentSong?.artist ?? null}
+            positionMs={positionMs}
+            isPlaying={isPlaying}
+            isHost={jam.host?.id === user?.id}
+            onTogglePlay={togglePlayback}
+            onSeek={handleSeek}
+            onSeekStart={() => setIsScrubbing(true)}
+            onSeekEnd={commitSeek}
+            durationMs={jam.currentSong?.durationMs ?? 0}
+          />
         )}
 
         {tab === 'player' && (

@@ -22,7 +22,7 @@ The host may chose if the others in the jam are in the same room with him so tha
 The jam has 3 states:
 1.Player extended. The player, song cover are visible, a queue button (which pressed displayed the current queue) and an add reference button (this button opens a popup in which the user can select from his personal Spotify playlists to be included in the queue.) (How the queue works: upon users adding reference playlists. The app add all the songs from these playlists in the queue, removes the duplicates and shuffles the list).
 
-2.Lyrics state. In this state the only difference between the first state is that instead of the song cover are the lyrics dinamically retrieved of the song. On bottom there is still the player, the queue button and the add reference
+2.Lyrics state. In this state the only difference between the first state is that instead of the song cover are the lyrics dinamically retrieved of the song. On bottom there is still the player
 
 3.Swipe the Jam state. In this state the music will be on mute and the swiper will be visible. How this works: It has the song card (title, authors and cover image) and 
 if swiped right, the song gets a like and the next song is displayed from the shuffled list
