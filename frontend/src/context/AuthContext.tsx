@@ -5,14 +5,20 @@ export interface User {
   id: string;
   name: string;
   profileImg: string;
+  accessToken: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, isLoading: true });
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  refreshUser: async () => {},
+});
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -39,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading }}>
+    <AuthContext.Provider value={{ user, isLoading, refreshUser: checkAuthStatus }}>
       {children}
     </AuthContext.Provider>
   );

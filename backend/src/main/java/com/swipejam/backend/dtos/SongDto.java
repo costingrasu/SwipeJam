@@ -10,4 +10,6 @@ public class SongDto {
     private String title;
     private String artist;
     private String coverUrl;
+    private String previewUrl;
+    private Integer durationMs;
 }

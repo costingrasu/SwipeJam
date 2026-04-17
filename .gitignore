@@ -23,4 +23,9 @@ Thumbs.db
 .env.test.local
 .env.production.local
 
+# Node
+node_modules/
+package-lock.json
+dist/
+
 documentation.txt

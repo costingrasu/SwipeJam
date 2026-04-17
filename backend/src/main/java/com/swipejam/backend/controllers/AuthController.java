@@ -3,6 +3,7 @@ package com.swipejam.backend.controllers;
 import com.swipejam.backend.dtos.UserDto;
 import com.swipejam.backend.entities.User;
 import com.swipejam.backend.repositories.UserRepository;
+import com.swipejam.backend.services.SpotifyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +20,7 @@ import java.util.Optional;
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final SpotifyService spotifyService;
 
     @GetMapping("/me")
     public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
@@ -27,14 +29,19 @@ public class AuthController {
         }
         
         String spotifyId = principal.getAttribute("id");
+        if (spotifyId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         Optional<User> userOptional = userRepository.findBySpotifyId(spotifyId);
         
         if (userOptional.isPresent()) {
-            User user = userOptional.get();
+            User user = spotifyService.refreshAccessToken(userOptional.get());
             return ResponseEntity.ok(UserDto.builder()
                     .id(user.getId())
                     .name(user.getName())
                     .profileImg(user.getProfileImg())
+                    .accessToken(user.getAccessToken())
                     .build());
         }
         

@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { Html5Qrcode } from "html5-qrcode";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import scanIcon from '../assets/scan.png';
@@ -13,7 +14,27 @@ export default function Home() {
   const [isJoining, setIsJoining] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    fetch("/api/jams/active")
+      .then(res => {
+        if (res.status === 200) {
+          res.json().then(data => {
+            if (data && data.id) navigate(`/jam/${data.id}`, { replace: true });
+          }).catch(() => { });
+        }
+      })
+      .catch(console.error);
+  }, [navigate]);
+
+  useEffect(() => {
+    return () => {
+      if (scannerTimerRef.current) clearTimeout(scannerTimerRef.current);
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => { });
+      }
+    };
+  }, []);
 
   const handleCreateJam = async () => {
     try {
@@ -28,19 +49,20 @@ export default function Home() {
     }
   };
 
-  const handleJoinJam = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!joinCode || joinCode.length !== 6) {
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const performJoinJam = async (code: string) => {
+    if (!code || code.length !== 6) {
       triggerError();
       return;
     }
-
     try {
       setIsJoining(true);
       const res = await fetch("/api/jams/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: joinCode.toUpperCase() }),
+        body: JSON.stringify({ code: code.toUpperCase() }),
       });
 
       if (res.status === 404 || res.status === 400) {
@@ -58,30 +80,47 @@ export default function Home() {
     }
   };
 
+  const handleJoinJam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performJoinJam(joinCode);
+  };
+
   const triggerError = () => {
     setHasError(true);
     setJoinCode("");
     setTimeout(() => setHasError(false), 500);
   };
 
-  const startCamera = async () => {
+  const startScanner = () => {
     setShowScanner(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.error("Camera error:", err);
-      alert("Could not access camera. Please check permissions or verify you are using HTTPS / localhost.");
-      setShowScanner(false);
-    }
+    scannerTimerRef.current = setTimeout(() => {
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      scannerRef.current = html5QrCode;
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, aspectRatio: 0.75 },
+        (decodedText) => {
+          html5QrCode.stop().then(() => {
+            const extractedCode = decodedText.slice(-6);
+            setJoinCode(extractedCode);
+            performJoinJam(extractedCode);
+            setShowScanner(false);
+          }).catch(console.error);
+        },
+        () => { }
+      ).catch((err) => {
+        console.error(err);
+        alert("Cannot start camera. Ensure HTTPS or localhost is being used to allow permissions.");
+        setShowScanner(false);
+      });
+    }, 150);
   };
 
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
+  const stopScanner = () => {
+    if (scannerRef.current) {
+      scannerRef.current.stop().then(() => {
+        scannerRef.current?.clear();
+      }).catch(console.error);
     }
     setShowScanner(false);
   };
@@ -159,7 +198,7 @@ export default function Home() {
               <label className="text-[15px] font-semibold text-dark-roast mb-3">Enter by QR</label>
               <button
                 type="button"
-                onClick={startCamera}
+                onClick={startScanner}
                 className="w-full bg-dark-roast hover:bg-black text-white py-4 rounded-2xl font-bold text-lg shadow-md transition-all active:scale-95 flex items-center justify-center space-x-3 relative z-10"
               >
                 <img src={scanIcon} alt="Scan QR" className="w-6 h-6 pointer-events-none" style={{ filter: 'invert(1)' }} />
@@ -176,15 +215,15 @@ export default function Home() {
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center animate-in fade-in duration-200 backdrop-blur-sm">
           <div className="w-full max-w-sm flex justify-between items-center px-6 mb-4">
             <h3 className="text-white text-lg font-bold font-poppins">Scan Jam QR Code</h3>
-            <button onClick={stopCamera} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors">
+            <button onClick={stopScanner} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
           <div className="relative w-full max-w-sm aspect-[3/4] bg-jam-dark/20 rounded-[2rem] overflow-hidden border-2 border-white/10 shadow-2xl">
-            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
+            <div id="qr-reader" className="w-full h-full [&>video]:object-cover [&>video]:w-full [&>video]:h-full [&>div]:hidden"></div>
 
-            <div className="absolute inset-10 border-2 border-crust/50 rounded-3xl z-10 flex">
+            <div className="absolute inset-10 border-2 border-crust/50 rounded-3xl z-10 flex pointer-events-none">
               <div className="w-8 h-8 border-t-4 border-l-4 border-crust absolute top-0 left-0 rounded-tl-2xl"></div>
               <div className="w-8 h-8 border-t-4 border-r-4 border-crust absolute top-0 right-0 rounded-tr-2xl"></div>
               <div className="w-8 h-8 border-b-4 border-l-4 border-crust absolute bottom-0 left-0 rounded-bl-2xl"></div>

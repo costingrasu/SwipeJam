@@ -11,4 +11,5 @@ import java.util.UUID;
 @Repository
 public interface UserJamRepository extends JpaRepository<UserJam, UserJamId> {
     List<UserJam> findByUserId(UUID userId);
+    List<UserJam> findByJamIdAndActiveTrue(UUID jamId);
 }

@@ -23,4 +23,7 @@ public class Song {
     
     @Column(name = "preview_url")
     private String previewUrl;
+
+    @Column(name = "duration_ms")
+    private Integer durationMs;
 }
