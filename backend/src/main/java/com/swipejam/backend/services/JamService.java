@@ -21,6 +21,7 @@ public class JamService {
     private final UserJamRepository userJamRepository;
     private final QueueItemRepository queueItemRepository;
     private final SongRepository songRepository;
+    private final SwipeRepository swipeRepository;
     private final SpotifyService spotifyService;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -484,5 +485,91 @@ public class JamService {
         messagingTemplate.convertAndSend("/topic/jam/" + jamId + "/queue", getJamQueue(jamId));
         messagingTemplate.convertAndSend("/topic/jam/" + jamId + "/state",
                 buildBroadcastDto(jam, jam.getCurrentSong() != null, 0));
+    }
+
+    @Transactional(readOnly = true)
+    public SwipeQueueDto getSwipeQueue(UUID jamId, User user) {
+        List<QueueItem> notPlayed = queueItemRepository.findByJamIdAndStatus(jamId, QueueItem.QueueStatus.NOT_PLAYED);
+        List<String> swipedIds = swipeRepository.findSwipedSongIdsByJamIdAndUserId(jamId, user.getId());
+
+        List<QueueItemDto> songs = notPlayed.stream()
+                .filter(qi -> !swipedIds.contains(qi.getSong().getSpotifyId()))
+                .map(qi -> {
+                    Song s = qi.getSong();
+                    SongDto songDto = SongDto.builder()
+                            .spotifyId(s.getSpotifyId())
+                            .title(s.getTitle())
+                            .artist(s.getArtist())
+                            .coverUrl(s.getCoverUrl())
+                            .previewUrl(s.getPreviewUrl())
+                            .durationMs(s.getDurationMs())
+                            .build();
+                    return QueueItemDto.builder()
+                            .id(qi.getId())
+                            .song(songDto)
+                            .score(qi.getScore())
+                            .superliked(qi.getSuperliked())
+                            .status(qi.getStatus().name())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        UserJamId userJamId = new UserJamId(jamId, user.getId());
+        Boolean usedSuperlike = userJamRepository.findById(userJamId)
+                .map(UserJam::getUsedSuperlike)
+                .orElse(false);
+
+        return SwipeQueueDto.builder()
+                .songs(songs)
+                .usedSuperlike(usedSuperlike)
+                .build();
+    }
+
+    @Transactional
+    public java.util.Map<String, Object> recordSwipe(UUID jamId, User user, String songId, String voteStr) {
+        Jam jam = jamRepository.findById(jamId)
+                .orElseThrow(() -> new IllegalArgumentException("Jam not found"));
+
+        if (swipeRepository.existsByJam_IdAndUser_IdAndSong_SpotifyId(jamId, user.getId(), songId)) {
+            throw new IllegalArgumentException("Already swiped this song");
+        }
+
+        Swipe.VoteType vote = Swipe.VoteType.valueOf(voteStr.toUpperCase());
+
+        UserJamId userJamId = new UserJamId(jamId, user.getId());
+        UserJam userJam = userJamRepository.findById(userJamId)
+                .orElseThrow(() -> new IllegalArgumentException("Not a member"));
+
+        if (vote == Swipe.VoteType.SUPERLIKE && userJam.getUsedSuperlike()) {
+            throw new IllegalArgumentException("Superlike already used");
+        }
+
+        QueueItem queueItem = queueItemRepository.findByJam_IdAndSong_SpotifyId(jamId, songId)
+                .orElseThrow(() -> new IllegalArgumentException("Song not in queue"));
+
+        if (vote == Swipe.VoteType.LIKE) {
+            queueItem.setScore(queueItem.getScore() + 1);
+        } else if (vote == Swipe.VoteType.SUPERLIKE) {
+            queueItem.setSuperliked(true);
+            userJam.setUsedSuperlike(true);
+        }
+
+        Song song = songRepository.findBySpotifyId(songId)
+                .orElseThrow(() -> new IllegalArgumentException("Song not found"));
+
+        Swipe swipe = Swipe.builder()
+                .jam(jam)
+                .user(user)
+                .song(song)
+                .vote(vote)
+                .build();
+
+        swipeRepository.save(swipe);
+        queueItemRepository.save(queueItem);
+        userJamRepository.save(userJam);
+
+        messagingTemplate.convertAndSend("/topic/jam/" + jamId + "/queue", getJamQueue(jamId));
+
+        return java.util.Map.of("usedSuperlike", userJam.getUsedSuperlike());
     }
 }

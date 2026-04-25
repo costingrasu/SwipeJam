@@ -271,4 +271,42 @@ public class JamController {
             return ResponseEntity.status(500).build();
         }
     }
+
+    @GetMapping("/{id}/swipe/queue")
+    public ResponseEntity<?> getSwipeQueue(@PathVariable UUID id, @AuthenticationPrincipal OAuth2User principal) {
+        try {
+            User user = fetchUserOrThrow(principal);
+            UserJamId userJamId = new UserJamId(id, user.getId());
+            UserJam membership = userJamRepository.findById(userJamId)
+                    .orElseThrow(() -> new IllegalArgumentException("Not a member"));
+            if (!membership.getActive()) throw new IllegalArgumentException("Not an active member");
+            return ResponseEntity.ok(jamService.getSwipeQueue(id, user));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PostMapping("/{id}/swipe")
+    public ResponseEntity<?> recordSwipe(@PathVariable UUID id,
+                                         @RequestBody com.swipejam.backend.dtos.SwipeRequestDto request,
+                                         @AuthenticationPrincipal OAuth2User principal) {
+        try {
+            User user = fetchUserOrThrow(principal);
+            UserJamId userJamId = new UserJamId(id, user.getId());
+            UserJam membership = userJamRepository.findById(userJamId)
+                    .orElseThrow(() -> new IllegalArgumentException("Not a member"));
+            if (!membership.getActive()) throw new IllegalArgumentException("Not an active member");
+            return ResponseEntity.ok(jamService.recordSwipe(id, user, request.getSongId(), request.getVote()));
+        } catch (IllegalArgumentException e) {
+            String msg = e.getMessage();
+            int status = "Superlike already used".equals(msg) ? 409 : 403;
+            return ResponseEntity.status(status).body(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
+    }
 }
